@@ -116,7 +116,7 @@ class Game {
       print("Enter the O player Name: ");
       String? playerName2 = stdin.readLineSync();
       playerTwo = Player(playerName2!, 'O');
-      currentPlayer = playerOne; // Reset current player to playerOne
+      currentPlayer = playerOne;
       return true;
     }
     return false;
