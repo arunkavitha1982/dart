@@ -58,24 +58,28 @@ class Game {
   Board board = Board();
   winGame winLogic = winGame();
   bool loopEnd = true;
+
   Game(this.playerOne, this.playerTwo, this.currentPlayer);
 
   void playGame() {
     board.display();
     print(
-        "${currentPlayer.playerName} (${currentPlayer.symbol}), enter column (0-6):");
+        "${currentPlayer.playerName} (${currentPlayer.symbol}), enter column (1-7):");
 
     int col = int.parse(stdin.readLineSync()!) - 1;
     if (board.setCoin(col, currentPlayer.symbol)) {
-      print("successfully added");
+      print("Successfully added.");
     } else {
-      print("Invalid input. Please enter a number between 0 and 6.");
+      print("Invalid input. Please try again.");
     }
 
     if (winLogic.isWin(board.grid)) {
       board.display();
       print("${currentPlayer.playerName} (${currentPlayer.symbol}) wins!");
       if (replay()) {
+        if (playerChange()) {
+          print("Players updated.");
+        }
         board.reset();
         start();
       } else {
@@ -84,22 +88,43 @@ class Game {
     } else if (winLogic.isDraw(board.grid)) {
       board.display();
       print("It's a draw!");
+      if (replay()) {
+        board.reset();
+        start();
+      } else {
+        loopEnd = false;
+      }
+    } else {
+      currentPlayer = (currentPlayer == playerOne) ? playerTwo : playerOne;
     }
-    currentPlayer = (currentPlayer == playerOne) ? playerTwo : playerOne;
   }
 
   bool replay() {
-    print("do you want play again, enter 1");
+    print("Do you want to play again? Enter 1 for Yes:");
+    String? userInput = stdin.readLineSync();
+    return userInput == "1";
+  }
+
+  bool playerChange() {
+    print("Do you want to change the players? Enter 1 to change:");
     String? userInput = stdin.readLineSync();
     if (userInput == "1") {
+      print('Enter the X player Name: ');
+      String? playerName1 = stdin.readLineSync();
+      playerOne = Player(playerName1!, 'X');
+
+      print("Enter the O player Name: ");
+      String? playerName2 = stdin.readLineSync();
+      playerTwo = Player(playerName2!, 'O');
+      currentPlayer = playerOne; // Reset current player to playerOne
       return true;
     }
     return false;
   }
 
   void start() {
-    print(currentPlayer.symbol);
     print("Game Start!");
+
     while (loopEnd) {
       playGame();
     }
@@ -108,7 +133,7 @@ class Game {
 
 class winGame {
   bool isWin(List<List<String>> grid) {
-    return row(grid) || colunm(grid) || downLeft(grid) || downRight(grid);
+    return row(grid) || column(grid) || downLeft(grid) || downRight(grid);
   }
 
   bool row(List<List<String>> grid) {
@@ -125,7 +150,7 @@ class winGame {
     return false;
   }
 
-  bool colunm(List<List<String>> grid) {
+  bool column(List<List<String>> grid) {
     for (int col = 0; col < 7; col++) {
       for (int row = 0; row < 3; row++) {
         if (grid[row][col] != '_' &&
@@ -154,7 +179,7 @@ class winGame {
   }
 
   bool downRight(List<List<String>> grid) {
-    for (int row = 5; row > 0; row--) {
+    for (int row = 5; row >= 3; row--) {
       for (int col = 0; col < 4; col++) {
         if (grid[row][col] != '_' &&
             grid[row][col] == grid[row - 1][col + 1] &&
