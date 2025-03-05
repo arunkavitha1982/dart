@@ -3,16 +3,7 @@ import 'dart:io';
 class Board {
   List<List<String>> grid;
 
-    Board()
-      : grid = [
-          ['', '', '', '', '', '', '_'],
-          ['', '', '', '', '', '', '_'],
-          ['', '', '', '', '', '', '_'],
-          ['', '', '', '', '', '', '_'],
-          ['', '', '', '', '', '', '_'],
-          ['', '', '', '', '', '', '_'],
-        ];
-
+  Board() : grid = List.generate(6, (_) => List.filled(7, '_'));
 
   void display() {
     for (var row in grid) {
@@ -22,10 +13,8 @@ class Board {
   }
 
   void reset() {
-    for (var i = 0; i < grid.length; i++) {
-      for (var j = 0; j < grid[i].length; j++) {
-        grid[i][j] = '_';
-      }
+    for (var row in grid) {
+      row.fillRange(0, row.length, '_');
     }
   }
 
@@ -128,83 +117,7 @@ class FourConnectionWin extends WinGame {
 
   @override
   bool isDraw(List<List<String>> grid) {
-    for (var row in grid) {
-      if (row.contains('_')) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
-
-class ThreeConnectionWin extends WinGame {
-  @override
-  bool isWin(List<List<String>> grid) {
-    return row(grid) || column(grid) || downLeft(grid) || downRight(grid);
-  }
-
-  @override
-  bool row(List<List<String>> grid) {
-    for (var row in grid) {
-      for (int i = 0; i <= 4; i++) {
-        if (row[i] != '_' && row[i] == row[i + 1] && row[i] == row[i + 2]) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  @override
-  bool column(List<List<String>> grid) {
-    for (int col = 0; col < 7; col++) {
-      for (int row = 0; row <= 3; row++) {
-        if (grid[row][col] != '_' &&
-            grid[row][col] == grid[row + 1][col] &&
-            grid[row][col] == grid[row + 2][col]) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  @override
-  bool downLeft(List<List<String>> grid) {
-    for (int row = 0; row <= 3; row++) {
-      for (int col = 0; col <= 4; col++) {
-        if (grid[row][col] != '_' &&
-            grid[row][col] == grid[row + 1][col + 1] &&
-            grid[row][col] == grid[row + 2][col + 2]) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  @override
-  bool downRight(List<List<String>> grid) {
-    for (int row = 5; row >= 2; row--) {
-      for (int col = 0; col <= 4; col++) {
-        if (grid[row][col] != '_' &&
-            grid[row][col] == grid[row - 1][col + 1] &&
-            grid[row][col] == grid[row - 2][col + 2]) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  @override
-  bool isDraw(List<List<String>> grid) {
-    for (var row in grid) {
-      if (row.contains('_')) {
-        return false;
-      }
-    }
-    return true;
+    return grid.every((row) => !row.contains('_'));
   }
 }
 
@@ -214,83 +127,62 @@ class Game {
   Player currentPlayer;
   Board board = Board();
   late WinGame winLogic;
-  bool loopEnd = true;
+  bool isRunning = true;
 
   Game(this.playerOne, this.playerTwo, this.currentPlayer);
 
   void playGame() {
-    board.display();
-    print(
-        "${currentPlayer.playerName} (${currentPlayer.symbol}), enter column (1-7):");
+    while (isRunning) {
+      board.display();
+      print("${currentPlayer.playerName} (${currentPlayer.symbol}), enter column (1-7):");
 
-    int col;
-    try {
-      col = int.parse(stdin.readLineSync()!) - 1;
-    } catch (e) {
-      print("Invalid input. Please enter a number between 1 and 7.");
-      return;
-    }
+      int col;
+      try {
+        col = int.parse(stdin.readLineSync()!) - 1;
+      } catch (e) {
+        print("Invalid input. Please enter a number between 1 and 7.");
+        continue;
+      }
 
-    if (board.setCoin(col, currentPlayer.symbol)) {
-      if (winLogic.isWin(board.grid)) {
-        board.display();
-        print("${currentPlayer.playerName} (${currentPlayer.symbol}) wins!");
-        if (!replay()) {
-          loopEnd = false;
+      if (board.setCoin(col, currentPlayer.symbol)) {
+        if (winLogic.isWin(board.grid)) {
+          board.display();
+          print("${currentPlayer.playerName} (${currentPlayer.symbol}) wins!");
+          if (!replay()) break;
+        } else if (winLogic.isDraw(board.grid)) {
+          board.display();
+          print("It's a draw!");
+          if (!replay()) break;
+        } else {
+          currentPlayer = (currentPlayer == playerOne) ? playerTwo : playerOne;
         }
-      } else if (winLogic.isDraw(board.grid)) {
-        board.display();
-        print("It's a draw!");
-        if (!replay()) {
-          loopEnd = false;
-        }
-      } else {
-        currentPlayer = (currentPlayer == playerOne) ? playerTwo : playerOne;
       }
     }
   }
 
   bool replay() {
     print("Do you want to play again? Enter 1 for Yes:");
-    String? userInput = stdin.readLineSync();
-    if (userInput == "1") {
-      if (playerChange()) {
-        loopEnd = true;
-      }
+    if (stdin.readLineSync() == "1") {
       board.reset();
-      start();
       return true;
     }
-    return false;
-  }
-
-  bool playerChange() {
-    print("Do you want to change the players? Enter 1 to change:");
-    String? userInput = stdin.readLineSync();
-    if (userInput == "1") {
-      print('Enter the X player Name: ');
-      String? playerName1 = stdin.readLineSync();
-      playerOne = Player(playerName1!, 'X');
-
-      print("Enter the O player Name: ");
-      String? playerName2 = stdin.readLineSync();
-      playerTwo = Player(playerName2!, 'O');
-      currentPlayer = playerOne;
-      return true;
-    }
+    isRunning = false;
     return false;
   }
 
   void start() {
-    print(
-        "Do you want to play Connect 4 or Connect 3? Enter 1 for Connect 4, 2 for Connect 3:");
-
-    int gameChoice = int.parse(stdin.readLineSync()!);
-    winLogic = (gameChoice == 1) ? FourConnectionWin() : ThreeConnectionWin();
-
-    while (loopEnd) {
-      playGame();
+    print("Do you want to play Connect 4 or Connect 3? Enter 1 for Connect 4, 2 for Connect 3:");
+    int gameChoice;
+    try {
+      gameChoice = int.parse(stdin.readLineSync()!);
+    } catch (e) {
+      print("Invalid input. Defaulting to Connect 4.");
+      gameChoice = 1;
     }
+
+    winLogic = (gameChoice == 1) ? FourConnectionWin() : FourConnectionWin(); // Default to Connect 4 logic
+
+    playGame();
   }
 }
 
